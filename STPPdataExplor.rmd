@@ -19,7 +19,7 @@ NOTE: Github doesn't currently render the latex equations typed in 'rmarkdown' d
 
 * Definitions
 * Exploring real (crime) point datasets
-* Synthesising space-time point datasets
+* Synthesising space-time point datasets (Go to: [Repo. for Synthetic dataset](https://github.com/QuantCrimAtLeeds/DataSynth/tree/master/DataSynthUsingR) )
 * Analysing the properties of the synthesised datasets
 * Comparing the properties of real and synthesised datasets. 
     * How similar or different are the datasets? 
