@@ -157,6 +157,12 @@ library(rgeos)
 #bound_area <- readShapePoly("F:/UNIVERSITY OF LEEDS SUBMISSIONS/synthesised data/rmarkdown/boundary_shapefile2.shp")
 #coordinates <- bound_area@polygons[[1]]@Polygons[[1]]@coords
 #colnames(coordinates)<-c("x","y")
+#sort the coordinates in anti-clockwise direction
+#anti_coord <- matrix(0, nrow(coordinates), 2)
+	#for(i in nrow(coordinates):1){ #i<-3840
+		#anti_coord[(nrow(coordinates)+1)-i,1] <- coordinates[i,1]
+		#anti_coord[(nrow(coordinates)+1)-i,2] <- coordinates[i,2]
+		#}
 #write.table(coordinates,file="bound_coords.csv", sep=",")
 ```
 
@@ -180,36 +186,38 @@ DATA_3d <- as.3dpoints(data_3d[, 1]/1000, data_3d[, 2]/1000, data_3d[,3])
 #DATA_3d<-as.data.frame(DATA_3d)
 Bound_area <- bound_area/1000
 
-#Watch out! This might take up to 5 minutes
-#Mt <- density(DATA_3d[, 3], n = 1000)
-#mut <- Mt$y[findInterval(DATA_3d[, 3], Mt$x)] * dim(DATA_3d)[1]
-#h <- mse2d(as.points(DATA_3d[, 1:2]), Bound_area, nsmse = 50, range = 4)
-#h <- h$h[which.min(h$mse)]
-#Ms <- kernel2d(as.points(DATA_3d[, 1:2]), Bound_area, h = h, nx = 5000, ny = 5000)
-#atx <- findInterval(x = DATA_3d[, 1], vec = Ms$x)
-#aty <- findInterval(x = DATA_3d[, 2], vec = Ms$y)
-#mhat <- NULL
 
+#Be warned! this takes some time to complete - depending on the data size.
+Mt <- density(DATA_3d[, 3], n = 1000)
+mut <- Mt$y[findInterval(DATA_3d[, 3], Mt$x)] * dim(DATA_3d)[1]
+h <- mse2d(as.points(DATA_3d[, 1:2]), Bound_area, nsmse = 50, range = 4)
+h <- h$h[which.min(h$mse)]
+Ms <- kernel2d(as.points(DATA_3d[, 1:2]), Bound_area, h = h, nx = 5000, ny = 5000)
+atx <- findInterval(x = DATA_3d[, 1], vec = Ms$x)
+aty <- findInterval(x = DATA_3d[, 2], vec = Ms$y)
+
+mhat <- NULL
 #adjust all the parameters here..
-#for(i in 1:length(atx)) mhat <- c(mhat, Ms$z[atx[i], aty[i]])
-#u <- seq(0, 10, by = 1)
-#v <- seq(0, 15, by = 1)
-#stik <- STIKhat(xyt = DATA_3d, s.region = Bound_area, t.region = c(1, 200),lambda = mhat * mut/dim(DATA_3d)[1], dist = u, times = v, #infectious = FALSE)
-#g <- PCFhat(xyt = DATA_3d, lambda = mhat * mut/dim(DATA_3d)[1], dist = 1:20,times = 1:20, s.region = Bound_area, t.region = c(1, #200))
+for(i in 1:length(atx)) mhat <- c(mhat, Ms$z[atx[i], aty[i]])
+u <- seq(0, 10, by = 1)
+v <- seq(0, 15, by = 1)
+
+stik <- STIKhat(xyt = DATA_3d, s.region = Bound_area, t.region = c(1, 365),lambda = mhat * mut/dim(DATA_3d)[1], dist = u, times = v, infectious = FALSE)
+
+g <- PCFhat(xyt = DATA_3d, lambda = mhat * mut/dim(DATA_3d)[1], dist = 1:20, times = 1:20, s.region = Bound_area, t.region = c(1, 365))
 
 #plotK(stik)
-#plotK(stik, persp = TRUE)
+plotK(stik, persp = TRUE)
 #plotPCF(g)
-#plotPCF(g, persp = TRUE, theta = -65, phi = 35)
+plotPCF(g, persp = TRUE, theta = -65, phi = 35)
 ```
 
-To assess the data for evidence of spatio-temporal clustering, we can follow common practice
-by comparing the estimator Kb(u, v) with estimates calculated for simulations under the
-null hypothesis that the underlying process is an inhomogeneous Poisson process (see Section
-3.1). We then compare the data with simulations of a Poisson process with intensity
-??^(s, t) = m(s)µ(t).The top right panel of Figure 3 shows comparison between Kb(u, v)?????u2v
-and tolerance envelopes indicating spatio-temporal clustering (grey shading). It indicates
-spatio-temporal clustering at small temporal distances v < 10 days and spatial distances
-u < 5 kilometers. This corresponds to the contour plot of the pair correlation function in
-Figure 3, where values greater than one indicate clustering. The FMD data-set has been
-further analyzed in Møller and Ghorbani (2012).
+
+To inspect the data for evidence of spatio-temporal clustering, the estimator $\hat{K}(u, v)$ is usually compared with the estimates calculated for simulations under the
+null hypothesis that the underlying process is an inhomogeneous Poisson process.Then, the data is compared with simulations of a Poisson process with intensity
+$\hat\lambda(s, t) = m(s)\mu(t)$.The first fig. below shows the comparison between $\hat{K}(u, v)-\pi u^2v$ and the tolerance envelopes indicating spatio-temporal clustering (grey shading). It indicates spatio-temporal clustering at small spatial distances $u < 1$ kilometers and temporal distances $v<30$ days. This also corresponds to the contour plots of the pair correlation function, where values greater than on indicate clustering.  
+
+
+
+
+
