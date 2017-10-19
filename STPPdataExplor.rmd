@@ -1,0 +1,209 @@
+---
+title: "Exploring Space-time Point Patterns"
+author: "geoMADE"
+date: "19 October 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+###Exercises
+
+* Definitions
+* Exploring real (crime) point datasets
+* Synthesising space-time point datasets
+* Analysing the properties of the synthesised datasets
+* Comparing the properties of real and synthesised datasets. 
+    * How similar or different are the datasets? 
+    * Can we synthesise similar processes as the real dataset (for different crime types)?
+
+###Required packages
+`stpp`, `ggplot2` and `lattice` packages: `install.packages("stpp"); install.packages("ggplot2"); install.packages("lattice") `
+
+
+###References
+
+`Gabriel, E., Rowlingson, B. and Diggle, P., 2013. stpp: an R package for plotting, simulating and analyzing Spatio-Temporal Point Patterns.` 
+`Journal of Statistical Software, 53(2), pp.1-29. Vancouver` 
+
+##Definitions
+
+###Space-time point processes (STPP)
+
+Point events (such as crimes or disease cases) occur in space as well as time. If both location and time information are available for these events, then one can in principle model refer to this data as the realization of a space-time point process. The events of a spatio-temporal point process form a countable set of points, $P=\{{(si, ti):~~i=1,2,3.}\}$, in which $s_i~\in~R^2$ is the location and $t_i\in~T\subset~R^2$ is th e time of occurrence of the $i^{th}$ event.
+
+####Properties of an STPP
+
+  * **$1^{st}-$order and $2^{nd}-$order properties**
+  
+The $1^{st}-$order properties are described by the intensity of the process,
+
+$$\begin{equation} 
+ \lambda(s,t)=\lim_{|ds |\rightarrow{0},| dt | \rightarrow{0}}~ {\frac{\mathbb{E}[Y(ds,dt)]}{| ds|| dt|}} 
+ \end{equation}$$
+
+Where $Y(ds, dt)$ represents the number of events in a cylinder defined by $ds \times dt$, where $ds$ is an infinitesimal disc containing location $s$, and $dt$, an infinitesimal interval containing small time $t$. The $\lambda(s, t)$ is the average number of event per unit volume at the location $(s,t)$. A process for which $\lambda(s, t) = \lambda$ for all $(s, t)$ is called homogeneous. 
+
+The $2^{nd}-$order properties describe the dependency relationship between numbers of events in pairs of sub-regions within study region. The $2^{nd}-$order intensity is defined as, 
+
+$$\begin{equation} 
+ \lambda_2((s_i,t_i),(s_j,t_j))=\lim_{| D_i |\,| D_j | \rightarrow{0}}~ {\frac{\mathbb{E}[Y(D_i),Y(D_j)]}{| D_i|| D_j|}} \end{equation}$$
+
+Where $D_i = ds_i \times dt_i$ and $D_i = ds_j \times dt_j$ are small cylinders containing the points $(s_i, t_i)$ and $(s_j, t_j)$ respectively. Other relevant descriptors of 2nd-order properties include the covariance density,
+
+$$\begin{equation} 
+ \gamma ((s_i,t_i),(s_j,t_j))=\lambda_2((s_i,t_i),(s_j,t_j))-\lambda(s_i,t_i)\lambda(s_j,t_j) \end{equation}$$
+ 
+and the point-pair correlation function [Diggle 2003](http://www.tandfonline.com/doi/full/10.1080/13658810310001620870),
+
+$$\begin{equation} 
+ g((s_i,t_i),(s_j,t_j))= 
+ {\frac{\lambda_2[(s_i,t_i),(s_j,t_j)]}
+ {\lambda(s_i,t_i),\lambda(s_j,t_j)}} \end{equation}$$
+The pair correlation function is interpreted as the standardised probability density that an event occurs in each of two small volumes centred on the points $(s_i, t_i)$ and $(s_j, t_j)$. *For a spatio-temporal Poisson process, the covariance density is identically zero and the pair correlation function is identically 1. Departures from these values indicate likely or less likely it is that a pair of events will occur at the specified locations than in a Poisson process with the same intensity.*
+
+  * **Stationarity**
+  
+An STPP $\{{\left(s,t\right), s\in S,  t\in T } \}$ is $1^{st}-order$ and $2^{nd}-order$ stationary:
+
+    * *in both space and time*, if: $\lambda ((s,t)=\lambda$ and $\lambda_2((s,t),(s',t'))=\lambda_2(s-s',t-t')$
+  
+A stationary STPP is also isotropic if $\lambda_2(s-s',t-t')=\lambda_2(u,v)$, where $(u,v)$ is the spatio-temporal difference vector, $u=||s-s'||$ and $v=|t-t'|$ 
+
+An STPP is $2^{nd}-order$ intensity reweighted stationary and isotropic if its intensity function is bounded away from zero and its pair correlation function depends only on the spatio-temporal difference $(u, v)$. 
+
+  * **Separability**
+
+Of interest is to investigate whether the conditional intensity $\lambda(s,t)$ can be expressed as
+
+$$\lambda(s,t)=m(s)\mu(t)$$
+where $m$ is a fixed non-negative functino and $\mu$ is a non-negative preditable process. If this holds we call the process separable with respect to the mark $s$. 
+
+A stationary STPP is $2^{nd}$-order separable if the covariance density, $\gamma(u,v)=\gamma_s(u)\gamma_t(v)$
+
+In general, $2^{nd}-order$ separability implies independence of spatial and temporal component processes, but not absolute.However, a Poisson process has independent spatial and temporal components if and only if it is $1^{st}-order$ separable. 
+
+##Exploring real point datasets
+
+  * **Space-time Inhomogeneous K-function and Space-time Inhomogeneous pair correlation function**
+  
+Let us now investigate the spatiotemporal structure of our dataset based on the $2^{nd}-order$ properties described above. In particular, we will look at the ST inhomogeneous K-function and pair correlation function which can be used as measure of ST clustering/regularity and as measure of ST interaction (Gabriel and Diggle, [2009](http://onlinelibrary.wiley.com/doi/10.1111/j.1467-9574.2008.00407.x/epdf)). The STIK is defined as:
+
+$$\begin{equation} 
+ K_{ST}(u,v)=2\pi\int_0^{v}\int_0^{u}g(u',v')u'du'dv' 
+ \end{equation}$$
+ 
+where $g(u,v)=\lambda_2(u,v)/(\lambda(s,t)\lambda(s',t')), ~u=||s-s'||and v=|t-t'|.$ 
+
+The STIK characterises the $2{nd}-order$ properties of a $2^{nd}-order$ intensity reweighted stationary ST point process, and can be used as a measure of regularity or aggregation. For any inhomogeneous spatio-temporal Poisson process with intensity bounded away from zero, $K_{ST}(u,v)=\pi u^2v.$ A value of $K_{ST}(u,v)$ greater than $\pi u^2v$ indicates aggregation at cumulative spatial and temporal separations less than $u$ and $v$, while  Values of
+$K_{ST}(u,v)$ greater than $\pi u^2v$ indicates regularity. The STIK function
+
+Gabriel and Diggle [(2009)](http://onlinelibrary.wiley.com/doi/10.1111/j.1467-9574.2008.00407.x/epdf) proposed a non-parametric estimator for the STIK function, based on data giving the locations of events $x_i:i=1,....,n$ on a spatio-temporal region $S\times T$, where $S$ is an arbitrary polygon and $T=[T_0,T_1]$:
+
+$$\begin{equation} 
+ \hat K_{ST}(u,v)= \frac{1}{|S\times T|}\frac{n}{n_v}\sum_{i=1}^{n_v}\sum_{j=1;j>1}^{n_v}
+ \frac{1}{w_{ij}}\frac{1}{\lambda(x_i)\lambda(x_j)}1_{\{u_{ij}\le u\}}1_{\{t_j-t_i\le v\}}
+ \end{equation}$$
+
+ 
+$n_v$ is the number of events for which $t_i\le T_i-v,~T=[T_0,T_1]$, $w_{ij}$ denotes the Ripley's spatial edge correction factor which is the proportion of the circle centred on $s_i$ and passing through $s_j$, i.e. of radius $u_{ij}=||s_i-s_j||$, that lies inside $S$.
+
+The intensity is unknown and must be estimated. See Gabriel and Diggle [(2009)](http://onlinelibrary.wiley.com/doi/10.1111/j.1467-9574.2008.00407.x/epdf) on how this is done. 
+An estimator of the space-time pair correlation function is described as:
+
+$$\begin{equation} 
+ \hat g_{ST}(u,v)= \frac{1}{|S\times T|}\frac{1}{4\pi u}\sum_{i=1}^{n_v}\sum_{j\ne1}^{n_v}
+ \frac{1}{w_{ij}v_{ij}}\frac{k_s(u-||s_i-s_j||)k_t(v-|t_i-t_j|)}{\lambda(s_i,t_i)\lambda(s_j,t_j)}
+ \end{equation}$$
+
+where $w_{ij}$ and $v_{ij}$ are the spatial and temporal edge correction factors defined in Equation * and $k_s(.),k_t(.)$ are kernel functions with bandwidths $h_s$ and $h_t$. Experience with pair correlation funtion estimation recommends box kernels, see Illian et al.[(2008)](http://onlinelibrary.wiley.com/book/10.1002/9780470725160) 
+
+
+##Application to South Chicago Crime Dataset
+
+The 'dataset' [here]("\F:\\UNIVERSITY OF LEEDS SUBMISSIONS\synthesised data\rmarkdown\chicago_burglary.csv") is the burglary crime incidents of South Chicago area of the United States between March 1 2011 and January 6 2012. The was downloaded from the official website of [City of Chicago](https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-present-Map/c4ep-ee5m). The dataset contains a three-column matrix of spatial locations and reported times of occurrence. 
+
+```{r comment=NA}
+#Visualising the dataset
+data <- read.table(file="F:/UNIVERSITY OF LEEDS SUBMISSIONS/synthesised data/rmarkdown/chicago_burglary.csv", sep=",",head=T)
+data <-cbind(data$x, data$y, data$date2)
+colnames(data)<-c("x","y","t")
+head(data)
+```    
+
+Where "1" in column 3 corresponds to the earliest date of the dataset (i.e. 01/03/2011)
+
+Figure 1 is the animation of the spatial distribution of burglary crime within the boundary area, with the time treated as a quantitative mark attached to each location. The locations are plotted with the size color of the plotting symbol corresponding to the value of the mark.
+
+### Visualising the dataset
+
+```{r comment=NA, message=F, warning=F}
+library(stpp)
+library(maptools)
+library(rgeos)
+
+```
+
+```{r }
+#1. uncomment this section to extract (x,y) coords from a boundary shapefile and export it to the working directory as "bound_coords.csv"
+#bound_area <- readShapePoly("F:/UNIVERSITY OF LEEDS SUBMISSIONS/synthesised data/rmarkdown/boundary_shapefile2.shp")
+#coordinates <- bound_area@polygons[[1]]@Polygons[[1]]@coords
+#colnames(coordinates)<-c("x","y")
+#write.table(coordinates,file="bound_coords.csv", sep=",")
+```
+
+```{r comment=NA, echo=FALSE}
+#import boundary coordinates
+bound_area <-  read.table(file="F:/UNIVERSITY OF LEEDS SUBMISSIONS/synthesised data/rmarkdown/bound_coords.csv", sep=",",head=T)
+bound_area <-cbind(bound_area[,1], bound_area[,2])
+colnames(bound_area) <-c("x","y")
+##head(bound_area)
+
+data_3d <- as.3dpoints(data)
+#plot(data, s.region = bound_area, pch = 19, mark = TRUE)
+animation(data_3d, runtime=3, cex=0.5, s.region=bound_area)
+```
+The functions STIKhat and PCFhat of `stpp` package provide estimates of the STIK function and pair correlation function, respectively.  The following code applies these estimators to the Chicago data under the assumption that the spatio-temporal intensity is separable. The spatial intensity is estimated using the function `kernel2d` of the package `splancs`. For the `PCFhat` the box kernel is used by default. `Epanechnikov`, `Gaussian` and `biweight` kernels can also be specified. The bandwidth value is obtained from the function `dpik` of the package `KernSmooth` (Wand [2013](https://cran.r-project.org/web/packages/KernSmooth/KernSmooth.pdf))
+
+
+
+```{r comment=NA, message=F, warning=F}
+DATA_3d <- as.3dpoints(data_3d[, 1]/1000, data_3d[, 2]/1000, data_3d[,3])
+#DATA_3d<-as.data.frame(DATA_3d)
+Bound_area <- bound_area/1000
+
+#Watch out! This might take up to 5 minutes
+#Mt <- density(DATA_3d[, 3], n = 1000)
+#mut <- Mt$y[findInterval(DATA_3d[, 3], Mt$x)] * dim(DATA_3d)[1]
+#h <- mse2d(as.points(DATA_3d[, 1:2]), Bound_area, nsmse = 50, range = 4)
+#h <- h$h[which.min(h$mse)]
+#Ms <- kernel2d(as.points(DATA_3d[, 1:2]), Bound_area, h = h, nx = 5000, ny = 5000)
+#atx <- findInterval(x = DATA_3d[, 1], vec = Ms$x)
+#aty <- findInterval(x = DATA_3d[, 2], vec = Ms$y)
+#mhat <- NULL
+
+#adjust all the parameters here..
+#for(i in 1:length(atx)) mhat <- c(mhat, Ms$z[atx[i], aty[i]])
+#u <- seq(0, 10, by = 1)
+#v <- seq(0, 15, by = 1)
+#stik <- STIKhat(xyt = DATA_3d, s.region = Bound_area, t.region = c(1, 200),lambda = mhat * mut/dim(DATA_3d)[1], dist = u, times = v, #infectious = FALSE)
+#g <- PCFhat(xyt = DATA_3d, lambda = mhat * mut/dim(DATA_3d)[1], dist = 1:20,times = 1:20, s.region = Bound_area, t.region = c(1, #200))
+
+#plotK(stik)
+#plotK(stik, persp = TRUE)
+#plotPCF(g)
+#plotPCF(g, persp = TRUE, theta = -65, phi = 35)
+```
+
+To assess the data for evidence of spatio-temporal clustering, we can follow common practice
+by comparing the estimator Kb(u, v) with estimates calculated for simulations under the
+null hypothesis that the underlying process is an inhomogeneous Poisson process (see Section
+3.1). We then compare the data with simulations of a Poisson process with intensity
+??^(s, t) = m(s)µ(t). The top right panel of Figure 3 shows comparison between Kb(u, v)?????u2v
+and tolerance envelopes indicating spatio-temporal clustering (grey shading). It indicates
+spatio-temporal clustering at small temporal distances v < 10 days and spatial distances
+u < 5 kilometers. This corresponds to the contour plot of the pair correlation function in
+Figure 3, where values greater than one indicate clustering. The FMD data-set has been
+further analyzed in Møller and Ghorbani (2012).
