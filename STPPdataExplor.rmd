@@ -1,6 +1,6 @@
 ---
 title: "Exploring Space-time Point Patterns"
-author: "geoMADE"
+author: "monsuru"
 date: "19 October 2017"
 output: html_document
 ---
