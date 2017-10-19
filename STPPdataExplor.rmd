@@ -201,7 +201,7 @@ To assess the data for evidence of spatio-temporal clustering, we can follow com
 by comparing the estimator Kb(u, v) with estimates calculated for simulations under the
 null hypothesis that the underlying process is an inhomogeneous Poisson process (see Section
 3.1). We then compare the data with simulations of a Poisson process with intensity
-??^(s, t) = m(s)µ(t). The top right panel of Figure 3 shows comparison between Kb(u, v)?????u2v
+??^(s, t) = m(s)µ(t).The top right panel of Figure 3 shows comparison between Kb(u, v)?????u2v
 and tolerance envelopes indicating spatio-temporal clustering (grey shading). It indicates
 spatio-temporal clustering at small temporal distances v < 10 days and spatial distances
 u < 5 kilometers. This corresponds to the contour plot of the pair correlation function in
