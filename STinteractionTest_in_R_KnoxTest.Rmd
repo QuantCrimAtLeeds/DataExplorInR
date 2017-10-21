@@ -212,20 +212,15 @@ result_Table[(tt-1), (ss-1)] <- p
 End.time <- Sys.time()
 comp_Time <- End.time - Start.time 
 flush.console()
-print(comp_Time)
-print("     ")
-print("     ")
-print("     ")
-print(result_Table)
-print("     ")
-print("     ")
-print("     ")
 
-print("still updating the table........")
+print(paste("time taken to fill cell:", tt-1,",", ss-1 ))
 
 	} #close temporal 
 
 } #close spatial
+
+#the result
+print(result_Table)
 
 ```
 
