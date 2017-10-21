@@ -1,0 +1,230 @@
+---
+title: "Space time interaction test in R using the Knox Test"
+author: "geoMADE"
+date: "21 October 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+The Knox test for R users
+
+Originally developed to detect space-time interaction in disease events [(Knox 1964)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1058931/), the Knox test has been widely applied to crime event data to reveal the repeat and near-repeat patterns of crime dataset [(Johnson and Bowers, 2004)](https://academic.oup.com/bjc/article-abstract/44/1/55/380644). Theoretically, the Knox test examines whether there are more observed pairs, $n$, of events within a defined spatio-temporal neighbourhood, than would be expected on the basis of chance. The neighbourhood is defined through measuring from every individual event, a critical spatial distance $(\delta)$ and a temporal distance $(\tau)$, along the spatial and temporal dimensions, respectively. For each pair of spatial and temporal distances, the closeness of all points $j$ from a reference $i$ can be examined. This is then repeated for every single points across the entire study area and finally added together in order to derive the Knox test statistic. 
+
+Given a spatial neighbourhood, $\delta$ defined from $\delta_1$ to $\delta_2$, and temporal neighbourhood, $\tau$ definied from $\tau_1$ to $\tau_2$, the Knox statistic, $n$, is computed as:
+
+$$n_{\delta,\tau}=\frac{1}{2}{\sum_{i=1}^{n}}{\sum_{j=1}^{n-1}}X_{ij}Y_{ij}$$ where $$X_{ij}=\{_{0, ~otherwise}^{1, if ~event ~j ~falls ~within ~\delta ~of ~i}$$ $$Y_{ij}=\{_{0, ~otherwise}^{1, if ~event ~j ~falls ~within ~\tau ~of ~i}$$
+The $pvalue$ of the observed $n_{\delta,\tau}$ can be computed by comparing the latter with a list of $expected_{\delta,\tau}$ generated under the assumption of no space-time interactions (null distribution); each realised by randomising the time attribute of the dataset while keeping the locations constant. Usually, 999 null distribution is used. The $pvalue$ is calculated as:
+$$pvalue={1-{\frac{n_{exp}}{n_s+1}}}$$ 
+where $n_e$ is the number of $expected_{\delta,\tau}$ exceeded by the $n_{\delta,\tau}$, and $n_2$ is the total number of iteration (e.g. 999). 
+
+In crime application the space-time interaction is tested over multiple combinations of spatial and temporal neighbourhoods.
+
+
+The 'dataset' [here]("\F:\\UNIVERSITY OF LEEDS SUBMISSIONS\synthesised data\rmarkdown\chicago_burglary.csv") is the burglary crime incidents of South Chicago area of the United States between March 1 2011 and January 6 2012. The was downloaded from the official website of [City of Chicago](https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-present-Map/c4ep-ee5m). The dataset contains a three-column matrix of spatial locations and reported times of occurrence. 
+
+```{r comment=NA}
+#Visualising the dataset
+data <- read.table(file="F:/UNIVERSITY OF LEEDS SUBMISSIONS/synthesised data/rmarkdown/chicago_burglary.csv", sep=",",head=T)
+data <-cbind(data$x, data$y, data$date2)
+colnames(data)<-c("x","y","t")
+dat <-as.data.frame(data)
+head(dat)
+```    
+
+Where "1" in column 3 corresponds to the earliest date of the dataset (i.e. 01/03/2011)
+
+
+**create a table of spatial and temporal threshold**
+```{r}
+#100 metre interval spatial neighbourhooods
+s_thres <- c(100, 200, 300, 400, 500) 
+#1-day band temporal neighbourhooods
+t_thres <- c(1, 2, 3, 4, 5, 6, 7) 
+#--------------------------------------------------------------
+#create a table to hold the result
+#--------------------------------------------------------------
+result_Table <- matrix(0, (length(t_thres)-1), (length(s_thres)-1))
+
+#colnames of the table
+col_N <- NULL
+for(g in 2:length(s_thres)){ #g<-2
+		col_N <-c(col_N, paste(s_thres[g-1],"-",s_thres[g],sep=""))
+	}
+
+#rownames of the table
+row_N <- NULL
+for(g in 2:length(t_thres)){ #g<-2
+		row_N <-c(row_N, paste(t_thres[g-1],"-",t_thres[g],sep=""))
+	}
+
+colnames(result_Table) <- col_N
+rownames(result_Table) <- row_N
+
+```
+**Previewing the result table**
+
+```{r}
+print(result_Table)
+```
+
+**Calculating the observed knox statistic**
+
+```{r}
+
+for(ss in 2:length(s_thres)){ #ss=2
+
+	for(tt in 2:length(t_thres)){ #tt=2
+
+b<-s_thres[ss-1]  
+c<-s_thres[ss]  
+
+d<-t_thres[tt-1]    
+e<-t_thres[tt]  
+
+#getting the start time for the entire process
+Start.time <- Sys.time()
+
+#-------------------------------------
+#function to calculate the pairwise spatial distance
+#-------------------------------------
+#variable to store the distance
+take_dist <- NULL
+
+for(w in 1:nrow(dat)){#w<-1
+	
+	M <- cbind(dat$x[w],dat$y[w], dat$x,dat$y)
+		dist_cal <- apply(M, 1, function(x)  sqrt((x[1]-x[3])^2 + (x[2]-x[4])^2) )
+	take_dist <- rbind(take_dist,dist_cal)
+	}
+
+#changing it to a matrix
+sdis <- matrix(take_dist,,nrow(dat))
+
+#changing the lower part of the distance matrix to a very large number, so that they don't count in the calculation
+sdis[lower.tri(sdis)] <- 1000000
+diag(sdis) <- 1000000
+#-------------------------------------
+
+
+#-------------------------------------
+#to calculate the pairwise temporal distance matrix
+#-------------------------------------
+
+time <- dat$t  #
+n <- length(time)
+
+#create a matrix to store the result
+tdis<-matrix(0,n,n)
+
+for (i in 1:n){
+   for (j in 1:n){
+     tdis[i,j]<- abs( time[i] - time[j])
+   }
+}
+
+#changing the lower part of the temporal matrix to a large number so that they don't count
+tdis[lower.tri(tdis)] <- 1000000
+diag(tdis) <- 1000000
+
+#set the number of replications to use for pvalue calculation
+
+Nrep<-999
+
+ktmon<-1:(Nrep+1)
+
+as<-matrix(0,nrow(sdis),nrow(sdis))
+
+as<-sdis
+as[which(sdis<=b) ] <-0
+as[which(sdis>c) ] <-0
+as[which(as!=0)] <- 1
+
+at<-tdis
+at[which(tdis<=d) ] <-0
+at[which(tdis>e) ] <-0
+at[which(at!=0)] <- 1
+
+diag(as) <- 0  # 
+diag(at) <- 0  # 
+
+s1<-0
+for(i in 1:n){
+   for (j in 1:n){
+   s1<-s1+as[i,j] * at[i,j]
+    }
+}
+
+#this is the observed statistics
+obst <- s1/2
+
+
+#-----------------------------------
+# Start the Monte carlo process
+#-----------------------------------
+
+for(k in 1:Nrep){ #111111111111
+
+#randomising the time attribute
+timeR<-sample(time)
+
+tdis<-matrix(0,n,n)
+
+tdis <- do.call(cbind, lapply(timeR, function(x) abs(x-timeR)))
+
+
+at<-tdis
+at[which(tdis<=d) ] <-0
+at[which(tdis>e) ] <-0
+at[which(at!=0)] <- 1
+
+#diag(as) <- 0
+diag(at) <- 0
+
+s1 <- sum(as*at)
+ 
+#storing the expected statistics
+ktmon[k] <- s1/2
+
+} #end of simulation
+
+#-----------------------------------
+#calculating the pvalue by comparing the 'observed statistic' with the 'expected statistics'
+#-----------------------------------
+
+ktmon[Nrep+1]<-obst
+r<-length(ktmon[ktmon>=obst])
+p<-r/(Nrep+1)
+list(Knox.T=obst , Freq=ktmon, Simulated.p.value=p)
+
+#add the result here
+#------------------------------------------
+result_Table[(tt-1), (ss-1)] <- p
+#------------------------------------------
+
+#-----------------------------------
+#getting the end time for the entire process
+
+End.time <- Sys.time()
+comp_Time <- End.time - Start.time 
+flush.console()
+print(comp_Time)
+print("     ")
+print("     ")
+print("     ")
+print(result_Table)
+print("     ")
+print("     ")
+print("     ")
+
+print("still updating the table........")
+
+	} #close temporal 
+
+} #close spatial
+
+```
+
+Each cell in the result table is filled with its corresponding pvalues (Note, this process may takes some times if the dataset is very large!). 
