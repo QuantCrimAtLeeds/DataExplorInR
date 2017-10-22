@@ -10,3 +10,5 @@ Repo containing codes for exploring properties of STPP in R
 - [STinteractionTest_in_R_KnoxTest.html](http://htmlpreview.github.io/?https://github.com/QuantCrimAtLeeds/DataExplorInR/blob/master/STinteractionTest_in_R_KnoxTest.html) : file to render the .rmd file as 'html document'  
 
 
+
+
