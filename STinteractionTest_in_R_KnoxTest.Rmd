@@ -244,9 +244,6 @@ In the above table, any cells with $pvalue \le 0.05$ indicate the spatiotemporal
 
 In order to confirm this results, we can produce a frequency plot of crime count at a given value of $\delta$ for all values of $\tau$. 
 
-```{r}
-
-```
 
 ```{r}
 #First, let's preview the freq. data
@@ -271,5 +268,10 @@ abline(h=(-0.05), col="black")
 axis(1, at=1:length(rownames(result_Table)), labels=rownames(result_Table))
 
 ```
+<center>![](https://github.com/QuantCrimAtLeeds/DataSynth/blob/master/DataSynthUsingR/resources/Street_Net.jpg?raw=true)</center>
 
+<center>Figure 1. Crime counts at varying temporal distances</center>
+<center>*sfsfsfdsfsfsfdfsf*</center>
+
+<br />
 
