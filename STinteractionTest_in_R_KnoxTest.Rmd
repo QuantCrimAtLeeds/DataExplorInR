@@ -36,13 +36,12 @@ head(dat)
 
 Where "1" in column 3 corresponds to the earliest date of the dataset (i.e. 01/03/2011)
 
-
 **create a table of spatial and temporal threshold**
 ```{r}
 #100 metre interval spatial neighbourhooods
-s_thres <- c(100, 200, 300, 400, 500) 
+s_thres <- c(0, 100, 200, 300, 400, 500, 600, 700, 800) 
 #1-day band temporal neighbourhooods
-t_thres <- c(1, 2, 3, 4, 5, 6, 7) 
+t_thres <- c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14) 
 #--------------------------------------------------------------
 #create a table to hold the result
 #--------------------------------------------------------------
@@ -59,36 +58,16 @@ row_N <- NULL
 for(g in 2:length(t_thres)){ #g<-2
 		row_N <-c(row_N, paste(t_thres[g-1],"-",t_thres[g],sep=""))
 	}
-
 colnames(result_Table) <- col_N
 rownames(result_Table) <- row_N
-
 ```
-**Previewing the result table**
 
+**Previewing the result table**
 ```{r}
 print(result_Table)
 ```
 
-**Calculating the observed knox statistic**
-
 ```{r}
-
-for(ss in 2:length(s_thres)){ #ss=2
-
-	for(tt in 2:length(t_thres)){ #tt=2
-
-  Start.time <- Sys.time()
-  
-b<-s_thres[ss-1]  
-c<-s_thres[ss]  
-
-d<-t_thres[tt-1]    
-e<-t_thres[tt]  
-
-#getting the start time for the entire process
-Start.time <- Sys.time()
-
 #-------------------------------------
 #function to calculate the pairwise spatial distance
 #-------------------------------------
@@ -103,21 +82,19 @@ for(w in 1:nrow(dat)){#w<-1
 	}
 
 #changing it to a matrix
-sdis <- matrix(take_dist,,nrow(dat))
+sdis <- matrix(take_dist, ,nrow(dat))
 
 #changing the lower part of the distance matrix to a very large number, so that they don't count in the calculation
 sdis[lower.tri(sdis)] <- 1000000
 diag(sdis) <- 1000000
 #-------------------------------------
-
-
 #-------------------------------------
 #to calculate the pairwise temporal distance matrix
 #-------------------------------------
+##
 
 time <- dat$t  #
 n <- length(time)
-
 #create a matrix to store the result
 tdis<-matrix(0,n,n)
 
@@ -130,13 +107,33 @@ for (i in 1:n){
 #changing the lower part of the temporal matrix to a large number so that they don't count
 tdis[lower.tri(tdis)] <- 1000000
 diag(tdis) <- 1000000
+```
+
+#######################################################NEW
+**Calculating the observed knox statistic**
+```{r}
+
+profile_freq <- NULL ##NEW
+
+for(ss in 2:length(s_thres)){ #ss=2
+
+	get_Value <- NULL
+
+	for(tt in 2:length(t_thres)){ #tt=2
+
+  Start.time <- Sys.time()
+  
+b<-s_thres[ss-1]  
+c<-s_thres[ss]  
+
+d<-t_thres[tt-1]    
+e<-t_thres[tt]  
+
 
 #set the number of replications to use for pvalue calculation
 
 Nrep<-99
-
 ktmon<-1:(Nrep+1)
-
 as<-matrix(0,nrow(sdis),nrow(sdis))
 
 as<-sdis
@@ -162,20 +159,16 @@ for(i in 1:n){
 #this is the observed statistics
 obst <- s1/2
 
-
 #-----------------------------------
 # Start the Monte carlo process
 #-----------------------------------
 
 for(k in 1:Nrep){ #111111111111
-
 #randomising the time attribute
 timeR<-sample(time)
 
 tdis<-matrix(0,n,n)
-
 tdis <- do.call(cbind, lapply(timeR, function(x) abs(x-timeR)))
-
 
 at<-tdis
 at[which(tdis<=d) ] <-0
@@ -184,18 +177,15 @@ at[which(at!=0)] <- 1
 
 #diag(as) <- 0
 diag(at) <- 0
-
 s1 <- sum(as*at)
  
 #storing the expected statistics
 ktmon[k] <- s1/2
-
 } #end of simulation
 
 #-----------------------------------
 #calculating the pvalue by comparing the 'observed statistic' with the 'expected statistics'
 #-----------------------------------
-
 ktmon[Nrep+1]<-obst
 r<-length(ktmon[ktmon>=obst])
 p<-r/(Nrep+1)
@@ -208,20 +198,78 @@ result_Table[(tt-1), (ss-1)] <- p
 
 #-----------------------------------
 #getting the end time for the entire process
-
 End.time <- Sys.time()
 comp_Time <- End.time - Start.time 
 flush.console()
 
 print(paste("time taken to fill cell:", tt-1,",", ss-1, ": ")); print(comp_Time )
 
+
+#This code calculates the freq. at varying temporal distance for a given spatial distance  
+#------------------------------------------
+	as2 <- as 
+	at2 <- tdis 
+	at2[which(tdis <=(t_thres[tt-1]))] <-0   
+	at2[which(tdis>t_thres[tt]) ] <-0
+	at2[which(at2!=0)] <- 1
+	diag(as2) <- 0  # already taken care of....!
+	diag(at2) <- 0  # already taken care of...!
+	s12 <- sum(as2*at2)
+	#for calculating near-repeat
+	v12 <- sum(s12)/2
+
+	get_Value <- c(get_Value, v12)
+	flush.console()  ###TO BE CLEANED
+	print(get_Value)
+#------------------------------------------
+
 	} #close temporal 
+
+profile_freq[ss-1] <- list(get_Value)####NEW
+print(profile_freq) ####NEW
+names(profile_freq)[ss-1]<-paste(colnames(result_Table)[ss-1],"metres")
 
 } #close spatial
 
 #the result
 print(result_Table)
+```
+
+
+Each cell in the result table is filled with its corresponding pvalues (Note, this process may takes some times if the dataset is very large!). 
+
+**Confirming the results of the Space-time interaction test**
+
+In the above table, any cells with $pvalue \le 0.05$ indicate the spatiotemporal neighbourhoods at which the interaction of crime points is statistically significant. For example, at the critical spatial distance ($(\delta=[100 - 200])$), we have the intersecting critical temporal distances $(\tau=[1-2],[3-4],[4-5]$ and $[6-7])$ showing statistically significant cells with $pvalues$ equal $0.02, 0.01, 0.02$ and $0.02$, respectively.
+
+In order to confirm this results, we can produce a frequency plot of crime count at a given value of $\delta$ for all values of $\tau$. 
+
+```{r}
 
 ```
 
-Each cell in the result table is filled with its corresponding pvalues (Note, this process may takes some times if the dataset is very large!). 
+```{r}
+#First, let's preview the freq. data
+head(profile_freq)
+
+#Note: To use this code, change the value of "g" to pick the frequency data to plot
+	#----------------------------
+	g<-1 
+	prof_freq <- profile_freq[[g]]
+	#----------------------------
+
+mmm <- max(prof_freq)
+par(mar=c(7,7,4,2)+0.2, mgp=c(5,1,1))
+dev.new()
+plot(c(0,length(rownames(result_Table))), c(0,(mmm+1)), xlab="", ylab="", main=" ",  
+		cex=0.001, col="white", cex.lab=1.5, cex.axis=1.5, cex.main=1.5, las=1, xaxt = 'n')
+
+for(i in 1:length(prof_freq)){ #i<-1
+	segments((i), 0, (i), prof_freq[i], lwd=6, lend=2)
+	}
+abline(h=(-0.05), col="black")
+axis(1, at=1:length(rownames(result_Table)), labels=rownames(result_Table))
+
+```
+
+
