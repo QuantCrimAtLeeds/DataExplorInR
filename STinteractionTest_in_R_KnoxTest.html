@@ -327,9 +327,20 @@ profile_freq[ss-1] &lt;- list(get_Value)
 #print(profile_freq) 
 names(profile_freq)[ss-1]&lt;-paste(colnames(result_Table)[ss-1],&quot;metres&quot;)
 
+<<<<<<< HEAD
 } #close spatial
 
 #the result
+=======
+} #close spatial</code></pre>
+<<<<<<< HEAD
+<pre><code>## [1] &quot;time taken to fill cell: 1 , 1 : &quot;
+## [12] 194.0 202.5 198.5</code></pre>
+=======
+<pre><code>## [1] It took approximately 6.526041 mins to fill each cell</code></pre>
+>>>>>>> 4c80767085740c49d08f9b9fa518ff24d20a01a0
+<pre class="r"><code>#the result
+>>>>>>> 0e5858cf6ce9ee2a5f93c78f7f95a4fb073c7a01
 print(result_Table)</code></pre>
 <pre><code>##       0-200 200-400 400-600 600-800 800-1000 1000-1200
 ## 0-1   0.031   0.039   0.047   0.421    0.164     0.651
@@ -348,10 +359,21 @@ print(result_Table)</code></pre>
 ## 13-14 0.007   0.214   0.298   0.578    0.151     0.657</code></pre>
 <p>Each cell in the result table is filled with its corresponding pvalues (Note, this process may takes some times if the dataset is very large!).</p>
 <p><strong>Confirming the results of the Space-time interaction test</strong></p>
+<<<<<<< HEAD
 <p>In the above table, any cells with <span class="math inline">\(pvalue \le 0.05\)</span> indicate the spatiotemporal neighbourhoods at which the interaction of crime points is statistically significant. For example, at the critical spatial distance (<span class="math inline">\((\delta=[200 - 400])\)</span>), we have the following critical temporal distances <span class="math inline">\(\tau=[0-1,~ \tau=[1-2],~\tau=[2-3]\)</span>, and <span class="math inline">\(\tau=[9-10]\)</span>, being statistically significant.</p>
 <p>In order to confirm this results, the <code>pattern profile</code> of the crime counts for 1-day interval (band) at each critical distance can be plotted.</p>
 <p>Let us use the point counts previously stored in the variable <code>profile_freq</code>;</p>
 <pre class="r"><code>#Note: To use this code, change the value of &quot;g&quot; to pick the critical distance to plot (g=1; means the first distance band [0-200])
+=======
+<p>In the above table, any cells with <span class="math inline">\(pvalue \le 0.05\)</span> indicate the spatiotemporal neighbourhoods at which the interaction of crime points is statistically significant. For example, at the critical spatial distance (<span class="math inline">\((\delta=[100 - 200])\)</span>), we have the intersecting critical temporal distances <span class="math inline">\((\tau=[1-2],[3-4],[4-5]\)</span> and <span class="math inline">\([6-7])\)</span> showing statistically significant cells with <span class="math inline">\(pvalues\)</span> equal <span class="math inline">\(0.02, 0.01, 0.02\)</span> and <span class="math inline">\(0.02\)</span>, respectively.</p>
+<p>In order to confirm this results, we can produce a frequency plot of crime count at a given value of <span class="math inline">\(\delta\)</span> for all values of <span class="math inline">\(\tau\)</span>.</p>
+<pre class="r"><code>#First, let's preview the freq. data
+head(profile_freq)</code></pre>
+<pre><code>## $`0-100 metres`
+##  [1] 29.0 31.5 26.5 27.5 29.0 26.5 31.0 25.5 30.5 27.0 25.5 26.0 30.5 28.0
+## [12] 194.0 168.5 202.5</code></pre>
+<pre class="r"><code>#Note: To use this code, change the value of &quot;g&quot; to pick the frequency data to plot
+>>>>>>> 0e5858cf6ce9ee2a5f93c78f7f95a4fb073c7a01
     #----------------------------
     g=1
     prof_freq &lt;- profile_freq[[g]]
