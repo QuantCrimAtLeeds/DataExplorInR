@@ -1,6 +1,6 @@
 ---
 title: "Space time interaction test in R using the Knox Test"
-author: "geoMADE"
+author: "monsuru"
 date: "21 October 2017"
 output: html_document
 ---
@@ -39,7 +39,7 @@ Where "1" in column 3 corresponds to the earliest date of the dataset (i.e. 01/0
 **create a table of spatial and temporal threshold**
 ```{r}
 #100 metre interval spatial neighbourhooods
-s_thres <- c(0, 100, 200, 300, 400, 500, 600, 700, 800) 
+s_thres <- c(0, 200, 400, 600, 800, 1000, 1200) 
 #1-day band temporal neighbourhooods
 t_thres <- c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14) 
 #--------------------------------------------------------------
@@ -88,10 +88,23 @@ sdis <- matrix(take_dist, ,nrow(dat))
 sdis[lower.tri(sdis)] <- 1000000
 diag(sdis) <- 1000000
 #-------------------------------------
+```
+
+
+**Calculating the observed knox statistic**
+```{r}
+
+profile_freq <- NULL
+
+for(ss in 2:length(s_thres)){ #ss=2
+
+	get_Value <- NULL
+
+	for(tt in 2:length(t_thres)){ #tt=2
+
 #-------------------------------------
 #to calculate the pairwise temporal distance matrix
 #-------------------------------------
-##
 
 time <- dat$t  #
 n <- length(time)
@@ -107,21 +120,7 @@ for (i in 1:n){
 #changing the lower part of the temporal matrix to a large number so that they don't count
 tdis[lower.tri(tdis)] <- 1000000
 diag(tdis) <- 1000000
-```
 
-#######################################################NEW
-**Calculating the observed knox statistic**
-```{r}
-
-profile_freq <- NULL ##NEW
-
-for(ss in 2:length(s_thres)){ #ss=2
-
-	get_Value <- NULL
-
-	for(tt in 2:length(t_thres)){ #tt=2
-
-  Start.time <- Sys.time()
   
 b<-s_thres[ss-1]  
 c<-s_thres[ss]  
@@ -132,7 +131,7 @@ e<-t_thres[tt]
 
 #set the number of replications to use for pvalue calculation
 
-Nrep<-99
+Nrep<-999
 ktmon<-1:(Nrep+1)
 as<-matrix(0,nrow(sdis),nrow(sdis))
 
@@ -162,7 +161,6 @@ obst <- s1/2
 #-----------------------------------
 # Start the Monte carlo process
 #-----------------------------------
-
 for(k in 1:Nrep){ #111111111111
 #randomising the time attribute
 timeR<-sample(time)
@@ -175,7 +173,6 @@ at[which(tdis<=d) ] <-0
 at[which(tdis>e) ] <-0
 at[which(at!=0)] <- 1
 
-#diag(as) <- 0
 diag(at) <- 0
 s1 <- sum(as*at)
  
@@ -196,15 +193,6 @@ list(Knox.T=obst , Freq=ktmon, Simulated.p.value=p)
 result_Table[(tt-1), (ss-1)] <- p
 #------------------------------------------
 
-#-----------------------------------
-#getting the end time for the entire process
-End.time <- Sys.time()
-comp_Time <- End.time - Start.time 
-flush.console()
-
-print(paste("time taken to fill cell:", tt-1,",", ss-1, ": ")); print(comp_Time )
-
-
 #This code calculates the freq. at varying temporal distance for a given spatial distance  
 #------------------------------------------
 	as2 <- as 
@@ -212,21 +200,20 @@ print(paste("time taken to fill cell:", tt-1,",", ss-1, ": ")); print(comp_Time 
 	at2[which(tdis <=(t_thres[tt-1]))] <-0   
 	at2[which(tdis>t_thres[tt]) ] <-0
 	at2[which(at2!=0)] <- 1
-	diag(as2) <- 0  # already taken care of....!
-	diag(at2) <- 0  # already taken care of...!
+	diag(as2) <- 0  
+	diag(at2) <- 0 
 	s12 <- sum(as2*at2)
-	#for calculating near-repeat
+
 	v12 <- sum(s12)/2
 
 	get_Value <- c(get_Value, v12)
-	flush.console()  ###TO BE CLEANED
-	print(get_Value)
+	
 #------------------------------------------
 
 	} #close temporal 
 
-profile_freq[ss-1] <- list(get_Value)####NEW
-print(profile_freq) ####NEW
+profile_freq[ss-1] <- list(get_Value)
+#print(profile_freq) 
 names(profile_freq)[ss-1]<-paste(colnames(result_Table)[ss-1],"metres")
 
 } #close spatial
@@ -240,18 +227,15 @@ Each cell in the result table is filled with its corresponding pvalues (Note, th
 
 **Confirming the results of the Space-time interaction test**
 
-In the above table, any cells with $pvalue \le 0.05$ indicate the spatiotemporal neighbourhoods at which the interaction of crime points is statistically significant. For example, at the critical spatial distance ($(\delta=[100 - 200])$), we have the intersecting critical temporal distances $(\tau=[1-2],[3-4],[4-5]$ and $[6-7])$ showing statistically significant cells with $pvalues$ equal $0.02, 0.01, 0.02$ and $0.02$, respectively.
+In the above table, any cells with $pvalue \le 0.05$ indicate the spatiotemporal neighbourhoods at which the interaction of crime points is statistically significant. For example, at the critical spatial distance ($(\delta=[200 - 400])$), we have the following critical temporal distances $\tau=[0-1,~ \tau=[1-2],~\tau=[2-3]$, and $\tau=[9-10]$, being statistically significant. 
 
-In order to confirm this results, we can produce a frequency plot of crime count at a given value of $\delta$ for all values of $\tau$. 
+In order to confirm this results, the `pattern profile` of the crime counts for 1-day interval (band) at each critical distance can be plotted. 
 
-
+Let us use the point counts previously stored in the variable `profile_freq`;
 ```{r}
-#First, let's preview the freq. data
-head(profile_freq)
-
-#Note: To use this code, change the value of "g" to pick the frequency data to plot
+#Note: To use this code, change the value of "g" to pick the critical distance to plot (g=1; means the first distance band [0-200])
 	#----------------------------
-	g<-1 
+	g=1
 	prof_freq <- profile_freq[[g]]
 	#----------------------------
 
@@ -268,10 +252,11 @@ abline(h=(-0.05), col="black")
 axis(1, at=1:length(rownames(result_Table)), labels=rownames(result_Table))
 
 ```
-<center>![](https://github.com/QuantCrimAtLeeds/DataSynth/blob/master/DataSynthUsingR/resources/Street_Net.jpg?raw=true)</center>
+<center>![](https://github.com/QuantCrimAtLeeds/DataExplorInR/blob/master/resources/knox_image.jpg?raw=true)</center>
 
-<center>Figure 1. Crime counts at varying temporal distances</center>
-<center>*sfsfsfdsfsfsfdfsf*</center>
+<center>Figure 1. `Pattern Profiles:` Crime counts at varying temporal bands for two critical distances distances; $\delta=[0 - 200m]$, and $\delta=[201m - 400m]$ </center>
 
 <br />
+
+The result from the table 2 for $\delta=[0 - 200m]$, and $\delta=[201m - 400m]$ can be examined in relation to the figure 1a and figure 1b, respectively, to confirm that the statistically significant cells in the table do reflect in Figure 2 in terms of relatively higher frequency.
 
